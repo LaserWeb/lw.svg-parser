@@ -40,8 +40,20 @@ let parser = new Parser(settings)
 // <input> must be an raw XML string, XMLDocument, Element or File object
 return parser.parse(input).then(tags => {
     console.log('tags:', tags);
+    tags.forEach(tag => {
+        tag.getPaths()  // return an array of Path objects (all contours + holes)
+        tag.getShapes() // return an array of ExPolygons objects from Clipper.js (filled shapes)
+    })
 })
 .catch(error => {
     console.error('error:', error);
 });
+```
+
+After the main <svg> tag was parsed you can access this two properties on the parser instance :
+
+```javascript
+parser.editor   // Editor info { name, version, fingerprint }
+parser.document // Document info { width, height, viewBox } 
+                // where viewBox is { x, y, width, height }
 ```
