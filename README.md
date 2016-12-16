@@ -50,7 +50,7 @@ return parser.parse(input).then(tags => {
 });
 ```
 
-After the main <svg> tag was parsed you can access this two properties on the parser instance :
+After the main `<svg>` tag was parsed you can access this two properties on the parser instance :
 
 ```javascript
 parser.editor   // Editor info { name, version, fingerprint }
