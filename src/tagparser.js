@@ -1,5 +1,5 @@
-import { Arc, CubicBezier, QuadricBezier } from './trace'
-import { Point, Path } from './path'
+import { Arc, CubicBezier, QuadricBezier } from 'lw.svg-curves'
+import { Point, Path } from 'lw.svg-path'
 
 // SVG tag parser
 class TagParser {
@@ -37,6 +37,13 @@ class TagParser {
 
         if (! attrs) {
             return null
+        }
+
+        // Get viewBox attribute if any
+        let viewBox = attrs.getNamedItem('viewBox')
+
+        if (viewBox) {
+            this.tag.setAttr('viewBox', this._normalizeTagAttrPoints(viewBox))
         }
 
         // For each attribute
@@ -114,6 +121,11 @@ class TagParser {
             // Normalize size unit -> to px
             case 'x':
             case 'y':
+            case 'width':
+            case 'height':
+                value = this._normalizeTagAttrUnit(attr)
+            break
+
             case 'x1':
             case 'y1':
             case 'x2':
@@ -123,23 +135,25 @@ class TagParser {
             case 'ry':
             case 'cx':
             case 'cy':
-            case 'width':
-            case 'height':
-            case 'fontSize':
-            case 'strokeWidth':
-                value = this._normalizeTagAttrUnit(attr)
+            case 'font-size':
+            case 'stroke-width':
+                value = this._normalizeTagAttrUnit(attr, true)
             break
 
             // Normalize points attribute
             case 'points':
-            case 'viewBox':
+            //case 'viewBox':
                 value = this._normalizeTagAttrPoints(attr)
+            break
+
+            case 'viewBox':
+                value = false
             break
 
             // Range limit to [0 - 1]
             case 'opacity':
-            case 'fillOpacity':
-            case 'strokeOpacity':
+            case 'fill-opacity':
+            case 'stroke-opacity':
                 value = this._normalizeTagAttrRange(attr, 0, 1)
             break
 
@@ -153,7 +167,7 @@ class TagParser {
     }
 
     // Normalize attribute unit to px
-    _normalizeTagAttrUnit(attr) {
+    _normalizeTagAttrUnit(attr, ratio) {
         let stringValue = attr.nodeValue.toLowerCase()
         let floatValue  = parseFloat(stringValue)
 
@@ -179,6 +193,34 @@ class TagParser {
 
         if (stringValue.indexOf('pc') !== -1) {
             return floatValue * 15.0
+        }
+
+        if (stringValue.indexOf('%') !== -1) {
+            let viewBox = this.tag.getAttr('viewBox', this.tag.parent && this.tag.parent.getAttr('viewBox'))
+
+            switch (attr.nodeName) {
+                case 'x':
+                case 'width':
+                    floatValue *= viewBox[2] / 100
+                break
+                case 'y':
+                case 'height':
+                    floatValue *= viewBox[3] / 100
+                break
+            }
+        }
+
+        if (stringValue.indexOf('em') !== -1) {
+            let fontSize = this.tag.getAttr('font-size', 16)
+
+            switch (attr.nodeName) {
+                case 'x':
+                case 'y':
+                case 'width':
+                case 'height':
+                    floatValue *= fontSize
+                break
+            }
         }
 
         return floatValue
@@ -419,7 +461,10 @@ class TagParser {
             return this.parser._skipTag(this.tag, 'the number of points must be even')
         }
 
-        relative = arguments.length < 2 && this.currentCommand.relative
+        //relative = arguments.length < 2 && this.currentCommand.relative
+        if (relative === undefined) {
+            relative = this.currentCommand.relative
+        }
 
         this.tag.addPoints(points, relative)
         return true
@@ -486,6 +531,18 @@ class TagParser {
 
         // Skipped tag
         return false
+    }
+
+    _image() {
+        // console.log(this.tag.getAttr('xlink:href'))
+        // Handled tag
+        return true
+    }
+
+    _text() {
+        // console.log(this.tag.element.textContent)
+        // Handled tag
+        return true
     }
 
     _defs() {
@@ -682,7 +739,7 @@ class TagParser {
         }
 
         // Split on each commands
-        let commands = dAttr.match(/([M|Z|L|H|V|C|S|Q|T|A]+([^M|Z|L|H|V|C|S|Q|T|A]+)?)/gi)
+        let commands = dAttr.match(/([M|Z|L|H|V|C|S|Q|T|A]([^M|Z|L|H|V|C|S|Q|T|A]+)?)/gi)
 
         if (! commands) {
             return this.parser._skipTag(this.tag, 'malformed "d" attribute')
@@ -751,13 +808,34 @@ class TagParser {
     }
 
     _pathM(points) {
+        // Current point
+        let x  = this.tag.point.x
+        let y  = this.tag.point.y
+        let rl = this.currentCommand.relative
+
+        // First point (start of new path)
+        let firstPoint = points.splice(0, 2)
+
         // New path
         this._newPath()
 
-        // Set the current point (start of new path)
+        // Relative moveTo (First moveTo is always absolute)
+        if (rl && this.tag.paths.length > 1) {
+            firstPoint[0] += x
+            firstPoint[1] += y
+        }
+
+        // Add first point
+        let result = this._addPoints(firstPoint, false)
+
         // If is followed by multiple pairs of coordinates,
         // the subsequent pairs are treated as implicit lineto commands.
-        return this._addPoints(points)
+        if (result && points.length) {
+            result = this._addPoints(points)
+        }
+
+        // Return result
+        return result
     }
 
     _pathZ() {

@@ -88,6 +88,7 @@ function drawFile(file, tags) {
 
 function flipY(object) {
     object.scale.y = -1;
+    object.position.y += parser.document.height;
     object.children.forEach(flipY);
 }
 
@@ -199,22 +200,22 @@ function createColor(color) {
     var luma, lumaLimit = 200;
 
     while (true) {
-        luma = (r * 0.3) + (g * 0.59) + (b * 0.11);
+    luma = (r * 0.3) + (g * 0.59) + (b * 0.11);
 
-        if (luma <= lumaLimit) {
-            break;
-        }
+    if (luma <= lumaLimit) {
+    break;
+}
 
-        r > 0 && (r -= 1);
-        g > 0 && (g -= 1);
-        b > 0 && (b -= 1);
-    }*/
+r > 0 && (r -= 1);
+g > 0 && (g -= 1);
+b > 0 && (b -= 1);
+}*/
 
-    // Create color object ([0-255] to [0-1] range)
-    color = new THREE.Color(r / 255, g / 255, b / 255);
+// Create color object ([0-255] to [0-1] range)
+color = new THREE.Color(r / 255, g / 255, b / 255);
 
-    // Return the color object
-    return color;
+// Return the color object
+return color;
 }
 
 // UI --------------------------------------------------------------------------
@@ -241,6 +242,11 @@ function initViewer() {
 
     controls.target.set(0, 0, 0);
 
+    var gridHelper         = new THREE.GridHelper(1000, 10, '#ccc', '#eee');
+    gridHelper.rotation.x  = 90 * Math.PI / 180;
+
+    scene.add(gridHelper);
+
     document.body.appendChild(canvas);
 }
 
@@ -257,7 +263,17 @@ function resize() {
     camera.updateProjectionMatrix();
 }
 
+function attachBoundingBox(object) {
+    var box  = new THREE.Box3().setFromObject(object);
+    var bbox = new THREE.BoxHelper(object, 0xff0000);
+    object.userData.size = box.getSize();
+    object.userData.bbox = bbox;
+    bbox.visible = false;
+    object.add(bbox);
+}
+
 function addObject(name, object) {
+    attachBoundingBox(object);
     addUIObject(name, object);
     object.name = name;
     scene.add(object);
@@ -270,6 +286,7 @@ function removeObject(object) {
 function addUIObject(name, object) {
     var file     = $('<li>').attr('id', object.uuid).data('object', object);
     var filename = $('<span></span>').addClass('filename');
+    var size     = $('<span></span>').addClass('size');
     var buttons  = $('<span></span>').addClass('buttons');
     var hide     = $('<i class="fa fa-eye" title="Visible"></i>');
     var show     = $('<i class="fa fa-eye-slash" style="display:none;" title="Hidden"></i>');
@@ -279,8 +296,25 @@ function addUIObject(name, object) {
     buttons.append(remove, show, hide);
     file.append(buttons, filename);
 
-    $('#files').append(file);
+    $('#files').append(file, size);
     $('#noFiles').hide();
+
+    size.html('size: ' + parseInt(object.userData.size.x) + ' x ' + parseInt(object.userData.size.y) + 'px');
+    size.hide();
+
+    file.append(buttons, filename, size);
+
+    file.on('mouseenter', function() {
+        object.userData.bbox.visible = true;
+        filename.hide();
+        size.show();
+    })
+
+    file.on('mouseleave', function() {
+        object.userData.bbox.visible = false;
+        filename.show();
+        size.hide();
+    })
 
     remove.on('click', function() {
         removeUIObject(object);

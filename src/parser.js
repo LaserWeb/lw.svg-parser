@@ -29,7 +29,7 @@ class Parser {
             'svg', 'g', 'defs', 'use',
             'line', 'polyline', 'polygon',
             'rect', 'circle', 'ellipse', 'path',
-            'title', 'desc'
+            'title', 'desc', 'image', 'text'
         ]
 
         // Tags list to includes/excludes
@@ -39,7 +39,7 @@ class Parser {
         // User onTag callback ?
         settings.onTag && this.onTag(settings.onTag, settings.onTagContext)
     }
-    
+
     // Load raw XML string, XMLDocument, Element or File object
     load(input) {
         // Load raw XML string

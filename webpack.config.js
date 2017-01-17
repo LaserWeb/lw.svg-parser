@@ -1,7 +1,9 @@
 let path = require('path')
 
+let min = process.argv.indexOf('-p') !== -1
+
 let output_library  = "SVGParser"
-let output_filename = "lw.svg-parser.js"
+let output_filename = "lw.svg-parser" + (min ? ".min" : "") + ".js"
 
 let src_path  = path.resolve('./src')
 let dist_path = path.resolve('./dist')
