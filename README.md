@@ -1,25 +1,49 @@
-# lw.svg-parser ([demo](https://lautr3k.github.io/lw.svg-parser/dist/example/))
+# lw.svg-parser
 SVG parser for [LaserWeb/CNCWeb](https://github.com/LaserWeb/LaserWeb4).
 
 ## Supported tags
 ```html
-<svg>
-<title> <desc>
+<svg> <title> <desc>
 <g> <defs> <use>
 <line> <polyline> <polygon>
 <rect> <circle> <ellipse>
-<path>
+<path> <image> <text>
 ```
 
 ## Features
 - ViewBox, PreserveAspectRatio
 - Clipping paths with [Clipper.js](https://sourceforge.net/projects/jsclipper/)
 - Promise mechanism
+- ES6 / UMD module
+
+## Demo
+https://lautr3k.github.io/lw.svg-parser/dist/example/
+
+## Installation
+Using NPM
+```
+npm install lw.svg-parser
+```
+
+Using GIT
+```
+git clone https://github.com/lautr3k/lw.svg-parser.git
+cd svg-parser
+npm install
+```
+
+Or download the last build from https://raw.githubusercontent.com/lautr3k/lw.svg-parser/master/dist/lw.svg-parser.js
+```html
+<script src="./lw.svg-parser.js"></script>
+<script>
+  var parser = SVGParser.Parser();
+</script>
+```
 
 ## Settings (all are optional)
 ```javascript
 let settings = {
-  includes: ['svg', 'g', 'defs', 'use', 'line', 'polyline', 'polygon', 'rect', 'circle', 'ellipse', 'path', 'title', 'desc'],
+  includes: ['svg', 'g', 'defs', 'use', 'line', 'polyline', 'polygon', 'rect', 'circle', 'ellipse', 'path', 'title', 'desc', 'image', 'text'],
   excludes: ['#text', '#comment'],
   traceSettings: { // Arc, Bezier curves only
     linear       : true, // Linear trace mode
@@ -54,6 +78,6 @@ After the main `<svg>` tag was parsed you can access this two properties on the 
 
 ```javascript
 parser.editor   // Editor info { name, version, fingerprint }
-parser.document // Document info { width, height, viewBox } 
+parser.document // Document info { width, height, viewBox }
                 // where viewBox is { x, y, width, height }
 ```

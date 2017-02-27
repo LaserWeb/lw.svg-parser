@@ -1,4 +1,4 @@
-import { Path, Point } from './path'
+import { Path, Point } from 'lw.svg-path'
 import clipper from 'clipper-lib'
 
 const DEG_TO_RAD = Math.PI / 180
@@ -34,6 +34,10 @@ class Tag {
             // Inherit parent attributes
             let excludes = ['transform', 'width', 'height']
 
+            if (this.name !== 'g' && this.name !== 'svg') {
+                excludes.push('viewBox')
+            }
+
             Object.keys(this.parent.attrs).forEach(key => {
                 if (excludes.indexOf(key) === -1) {
                     this.setAttr(key, this.parent.attrs[key])
@@ -68,7 +72,8 @@ class Tag {
     }
 
     clearPath() {
-        this.path = new Path()
+        this.path  = new Path()
+        this.point = new Point(0, 0)
     }
 
     newPath() {
@@ -79,7 +84,15 @@ class Tag {
     }
 
     closePath() {
-        return this.path.close()
+        // Close path
+        let close = this.path.close()
+
+        // Update current point
+        let point  = this.path.getPoint(-1)
+        this.point = new Point(point.x, point.y)
+
+        // Return close result
+        return close
     }
 
     addPoint(x, y, relative) {
@@ -93,7 +106,7 @@ class Tag {
         this.path.addPoint(x, y)
 
         // Update current point
-        this.point = this.path.getPoint(-1)
+        this.point = new Point(x, y)
     }
 
     addPoints(points, relative) {
