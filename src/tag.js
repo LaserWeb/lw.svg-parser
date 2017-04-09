@@ -85,7 +85,13 @@ class Tag {
 
     closePath() {
         // Close path
-        let close = this.path.close()
+        // this.path.close() is too constrained, which breaks some valid cases
+        let close = false;
+        if (!this.path.isClosed() && this.path.length > 1) {
+            close = true;
+            let firstPoint = this.path.getPoint(0);
+            this.path.addPoint(firstPoint.x, firstPoint.y);
+        }
 
         // Update current point
         let point  = this.path.getPoint(-1)
